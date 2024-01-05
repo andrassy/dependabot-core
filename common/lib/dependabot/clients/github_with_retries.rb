@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require "octokit"
@@ -38,11 +39,11 @@ module Dependabot
 
       def self.for_source(source:, credentials:)
         access_tokens =
-          credentials.
-          select { |cred| cred["type"] == "git_source" }.
-          select { |cred| cred["host"] == source.hostname }.
-          select { |cred| cred["password"] }.
-          map { |cred| cred.fetch("password") }
+          credentials
+          .select { |cred| cred["type"] == "git_source" }
+          .select { |cred| cred["host"] == source.hostname }
+          .select { |cred| cred["password"] }
+          .map { |cred| cred.fetch("password") }
 
         new(
           access_tokens: access_tokens,
@@ -52,11 +53,11 @@ module Dependabot
 
       def self.for_github_dot_com(credentials:)
         access_tokens =
-          credentials.
-          select { |cred| cred["type"] == "git_source" }.
-          select { |cred| cred["host"] == "github.com" }.
-          select { |cred| cred["password"] }.
-          map { |cred| cred.fetch("password") }
+          credentials
+          .select { |cred| cred["type"] == "git_source" }
+          .select { |cred| cred["host"] == "github.com" }
+          .select { |cred| cred["password"] }
+          .map { |cred| cred.fetch("password") }
 
         new(access_tokens: access_tokens)
       end
@@ -66,7 +67,7 @@ module Dependabot
       #################
 
       def fetch_commit(repo, branch)
-        response = ref(repo, "heads/#{branch}")
+        response = T.unsafe(self).ref(repo, "heads/#{branch}")
 
         raise Octokit::NotFound if response.is_a?(Array)
 
@@ -74,7 +75,7 @@ module Dependabot
       end
 
       def fetch_default_branch(repo)
-        repository(repo).default_branch
+        T.unsafe(self).repository(repo).default_branch
       end
 
       ############
@@ -89,7 +90,13 @@ module Dependabot
         access_tokens << nil if access_tokens.empty?
         access_tokens.uniq!
 
-        Octokit.middleware = Faraday::RackBuilder.new do |builder|
+        # Explicitly set the proxy if one is set in the environment
+        # as Faraday's find_proxy is very slow.
+        Octokit.configure do |c|
+          c.proxy = ENV["HTTPS_PROXY"] if ENV["HTTPS_PROXY"]
+        end
+
+        args[:middleware] = Faraday::RackBuilder.new do |builder|
           builder.use Faraday::Retry::Middleware, exceptions: RETRYABLE_ERRORS, max: max_retries || 3
 
           Octokit::Default::MIDDLEWARE.handlers.each do |handler|

@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require "excon"
@@ -58,8 +59,8 @@ module Dependabot
         end
 
         def filter_ignored_versions(versions_array)
-          filtered = versions_array.
-                     reject { |v| ignore_requirements.any? { |r| r.satisfied_by?(v) } }
+          filtered = versions_array
+                     .reject { |v| ignore_requirements.any? { |r| r.satisfied_by?(v) } }
           if @raise_on_ignored && filter_lower_versions(filtered).empty? && filter_lower_versions(versions_array).any?
             raise Dependabot::AllVersionsIgnored
           end
@@ -70,15 +71,15 @@ module Dependabot
         def filter_lower_versions(versions_array)
           return versions_array unless dependency.numeric_version
 
-          versions_array.
-            select { |version| version > dependency.numeric_version }
+          versions_array
+            .select { |version| version > dependency.numeric_version }
         end
 
         def available_versions
-          crates_listing.
-            fetch("versions", []).
-            reject { |v| v["yanked"] }.
-            map { |v| version_class.new(v.fetch("num")) }
+          crates_listing
+            .fetch("versions", [])
+            .reject { |v| v["yanked"] }
+            .map { |v| version_class.new(v.fetch("num")) }
         end
 
         def crates_listing
@@ -102,13 +103,11 @@ module Dependabot
         end
 
         def version_class
-          Utils.version_class_for_package_manager(dependency.package_manager)
+          dependency.version_class
         end
 
         def requirement_class
-          Utils.requirement_class_for_package_manager(
-            dependency.package_manager
-          )
+          dependency.requirement_class
         end
       end
     end

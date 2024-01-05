@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "spec_helper"
@@ -68,8 +69,8 @@ RSpec.describe Dependabot::Gradle::FileParser::RepositoriesFinder do
         let(:buildfile_fixture_name) { "subproject_repos.gradle" }
 
         it "doesn't include the subproject declarations" do
-          expect(repository_urls).
-            to match_array(%w(https://jcenter.bintray.com))
+          expect(repository_urls)
+            .to match_array(%w(https://jcenter.bintray.com))
         end
 
         context "and this is a subproject" do
@@ -111,7 +112,8 @@ RSpec.describe Dependabot::Gradle::FileParser::RepositoriesFinder do
       context "that get URLs from a variable" do
         let(:buildfile_fixture_name) { "variable_repos_build.gradle" }
 
-        pending "includes the additional declarations" do
+        it "includes the additional declarations" do
+          pending("silenced due to persistent Gradle bug, see commit 08122f9 for context")
           expect(repository_urls).to match_array(
             %w(
               https://jcenter.bintray.com
